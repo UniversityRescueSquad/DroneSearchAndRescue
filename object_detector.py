@@ -9,7 +9,7 @@ class ObjectDetector:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")    
         self.logger.info(f"Using device: {self.device}")
         
-        self.colors = {}
+        self.colors = self._setup_default_colors()
 
         self.processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
         self.model = DetrForObjectDetection.from_pretrained("facebook/detr-resnet-50")
@@ -109,3 +109,9 @@ class ObjectDetector:
         color = tuple(random.randint(0, 255) for _ in range(3))
         self.colors[label] = color
         return color
+    
+    def _setup_default_colors(self):
+        # Colors in BGR (Blue, Green, Red)
+        return {
+            'person': (0, 0, 255) # Red
+        }
