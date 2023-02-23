@@ -2,6 +2,7 @@ import logging
 import argparse
 import os
 from object_detector import ObjectDetector
+from video_editor import VideoEditor
 
 def setup_logging(log_level):
     # Create logger and set level
@@ -58,10 +59,27 @@ if __name__ == "__main__":
     # Setup logging
     logger = setup_logging(args.log)
 
-    # Create ObjectDetector object
-    detector = ObjectDetector(logger=logger)
+    detector = ObjectDetector(logger)
+    videoEditor = VideoEditor(logger)
 
     for file in get_files(args.input):
         # Detect objects in input video and save to output video
         logger.info(f"Start detecting objects in '{file}'")
-        detector.detect(file, output_file_path=args.output, confidence_threshold=args.confidence)
+        
+        videoEditor.open_video_file(file)
+        
+        if args.output:
+            videoEditor.save_output_video(args.output)
+
+        while videoEditor.has_next_frame():
+            frame = videoEditor.get_next_frame()
+
+            outputs = detector.detect(frame, confidence_threshold=args.confidence)
+
+            frame = videoEditor.get_processed_frame(frame, outputs)
+            videoEditor.show_frame(frame)
+
+            if videoEditor.exit_video():
+                break
+
+        videoEditor.close_video_file()
