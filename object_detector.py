@@ -1,17 +1,17 @@
 import torch
+import logging
 from transformers import DetrImageProcessor, DetrForObjectDetection
 
 class ObjectDetector:
-    def __init__(self, logger):
-        self.logger = logger
+    def __init__(self):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")    
-        self.logger.info(f"Using device: {self.device}")
+        logging.info(f"Using device: {self.device}")
 
         self.processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
         self.model = DetrForObjectDetection.from_pretrained("facebook/detr-resnet-50")
         self.model.to(self.device)
         self.model.eval()
-        self.logger.info("Model loaded successfully")
+        logging.info("Model loaded successfully")
 
     def detect(self, frame, confidence_threshold):
             # Preprocess

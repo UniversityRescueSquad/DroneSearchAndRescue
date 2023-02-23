@@ -1,19 +1,24 @@
+from abc import abstractmethod
 import cv2
+import logging
 import random
 import datetime
 
 class VideoEditor:
-    def __init__(self, logger):
-        self.logger = logger
+    def __init__(self):
         self.colors = self._setup_default_colors()
         self.should_save_to_output_file = False
+    
+    @abstractmethod
+    def get_next_frame(self):
+        pass
 
     def open_video_file(self, input_file_path):
         # Open input video file
         self.cap = cv2.VideoCapture(input_file_path)
         
         if not self.cap.isOpened():
-            self.logger.error("Could not open input file.")
+            logging.error("Could not open input file.")
             return
 
     def save_output_video(self, output_file_path):
@@ -39,14 +44,6 @@ class VideoEditor:
             return False
 
         return True
-    
-    def get_next_frame(self):
-        ret, frame = self.cap.read()
-        if not ret:
-            self.logger.error('Cannot read from video file.')
-            return
-        
-        return frame
 
     def get_processed_frame(self, frame, outputs):
             frame = self._draw_results_over_frame(frame, outputs)
@@ -66,7 +63,7 @@ class VideoEditor:
         if cv2.waitKey(1) == 27:
             return True
         
-        return False;
+        return False
 
     def _draw_results_over_frame(self, frame, outputs):
         # Draw bounding boxes
@@ -77,12 +74,12 @@ class VideoEditor:
     def _get_video_time(self):
         # Get last frame time
         time = datetime.timedelta(milliseconds=self.cap.get(cv2.CAP_PROP_POS_MSEC))
-        self.logger.info(f'Video time: {time}.')
+        logging.info(f'Video time: {time}.')
         return time
 
     def _draw_boxes(self, frame, outputs):
         for score, label, box in outputs:
-            self.logger.info(f"Detected a {label} with confidence {score:.2f}.")
+            logging.info(f"Detected a {label} with confidence {score:.2f}.")
             x1, y1, x2, y2 = map(int, box)
             color = self._get_color(label)
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
@@ -107,3 +104,44 @@ class VideoEditor:
         return {
             'person': (0, 0, 255) # Red
         }
+
+class FastVideoEditor(VideoEditor):
+    def __init__(self):
+        super(FastVideoEditor, self).__init__()
+        self.frame_rate = 5 # One frame every 5 seconds
+        self.current_frame = 0
+
+    def get_next_frame(self):
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame)
+        ret, frame = self.cap.read()
+        if ret:
+            self.current_frame += self.frame_rate * self.cap.get(cv2.CAP_PROP_FPS)
+            return frame
+        else:
+            return None
+
+class MediumVideoEditor(VideoEditor):
+    def __init__(self):
+        super(MediumVideoEditor, self).__init__()
+        self.frame_rate = 1 # One frame every second
+        self.current_frame = 0
+
+    def get_next_frame(self):
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame)
+        ret, frame = self.cap.read()
+        if ret:
+            self.current_frame += self.frame_rate * self.cap.get(cv2.CAP_PROP_FPS)
+            return frame
+        else:
+            return None
+
+class CompleteVideoEditor(VideoEditor):
+    def __init__(self):
+        super(CompleteVideoEditor, self).__init__()
+
+    def get_next_frame(self):
+        ret, frame = self.cap.read()
+        if ret:
+            return frame
+        else:
+            return None

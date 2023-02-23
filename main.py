@@ -2,24 +2,10 @@ import logging
 import argparse
 import os
 from object_detector import ObjectDetector
-from video_editor import VideoEditor
+from video_editor_factory import VideoEditorFactory
 
-def setup_logging(log_level):
-    # Create logger and set level
-    logger = logging.getLogger()
-    logger.setLevel(log_level)
-
-    # Create console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(log_level)
-
-    # Create formatter and add it to the handler
-    formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s", "%Y-%m-%d %H:%M:%S")
-    console_handler.setFormatter(formatter)
-
-    # Add handler to the logger
-    logger.addHandler(console_handler)
-    return logger
+def setup_logging():
+    logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S", level=logging.INFO)
 
 def get_files(location):
     """
@@ -49,7 +35,7 @@ def parse_args():
     parser.add_argument("--input", required=False, help="Path to input video file")
     parser.add_argument("--output", help="Output video file path")
     parser.add_argument("--confidence", type=float, default=0.9, help="Object detection confidence threshold")
-    parser.add_argument("--log", default="INFO", help="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)")
+    parser.add_argument("--detection_type", default="Fast", help="Edditor level (Fast, Medium, Complete)")
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -57,29 +43,29 @@ if __name__ == "__main__":
     args = parse_args()
 
     # Setup logging
-    logger = setup_logging(args.log)
+    setup_logging()
 
-    detector = ObjectDetector(logger)
-    videoEditor = VideoEditor(logger)
+    detector = ObjectDetector()
+    video_editor = VideoEditorFactory.create_video_editor(args.detection_type)
 
     for file in get_files(args.input):
         # Detect objects in input video and save to output video
-        logger.info(f"Start detecting objects in '{file}'")
+        logging.info(f"Start detecting objects in '{file}'")
         
-        videoEditor.open_video_file(file)
+        video_editor.open_video_file(file)
         
         if args.output:
-            videoEditor.save_output_video(args.output)
+            video_editor.save_output_video(args.output)
 
-        while videoEditor.has_next_frame():
-            frame = videoEditor.get_next_frame()
+        while video_editor.has_next_frame():
+            frame = video_editor.get_next_frame()
 
             outputs = detector.detect(frame, confidence_threshold=args.confidence)
 
-            frame = videoEditor.get_processed_frame(frame, outputs)
-            videoEditor.show_frame(frame)
+            frame = video_editor.get_processed_frame(frame, outputs)
+            video_editor.show_frame(frame)
 
-            if videoEditor.exit_video():
+            if video_editor.exit_video():
                 break
 
-        videoEditor.close_video_file()
+        video_editor.close_video_file()
