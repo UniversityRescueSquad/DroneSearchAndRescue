@@ -4,7 +4,7 @@ import logging
 import random
 import datetime
 
-class VideoEditor:
+class VideoReader:
     def __init__(self):
         self.colors = self._setup_default_colors()
         self.should_save_to_output_file = False
@@ -100,9 +100,9 @@ class VideoEditor:
             'person': (0, 0, 255) # Red
         }
 
-class FastVideoEditor(VideoEditor):
+class FastVideoReader(VideoReader):
     def __init__(self):
-        super(FastVideoEditor, self).__init__()
+        super(FastVideoReader, self).__init__()
         self.frame_rate = 5 # One frame every 5 seconds
         self.current_frame = 0
 
@@ -115,9 +115,9 @@ class FastVideoEditor(VideoEditor):
         else:
             return None
 
-class MediumVideoEditor(VideoEditor):
+class MediumVideoReader(VideoReader):
     def __init__(self):
-        super(MediumVideoEditor, self).__init__()
+        super(MediumVideoReader, self).__init__()
         self.frame_rate = 1 # One frame every second
         self.current_frame = 0
 
@@ -130,9 +130,9 @@ class MediumVideoEditor(VideoEditor):
         else:
             return None
 
-class CompleteVideoEditor(VideoEditor):
+class CompleteVideoReader(VideoReader):
     def __init__(self):
-        super(CompleteVideoEditor, self).__init__()
+        super(CompleteVideoReader, self).__init__()
 
     def get_next_frame(self):
         ret, frame = self.cap.read()
