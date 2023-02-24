@@ -17,9 +17,7 @@ class VideoEditor:
         # Open input video file
         self.cap = cv2.VideoCapture(input_file_path)
         
-        if not self.cap.isOpened():
-            logging.error("Could not open input file.")
-            return
+        return self.cap.isOpened()
 
     def save_output_video(self, output_file_path):
         self.should_save_to_output_file = True
@@ -40,10 +38,7 @@ class VideoEditor:
         cv2.destroyAllWindows()
 
     def has_next_frame(self):
-        if not self.cap.isOpened:
-            return False
-
-        return True
+        return self.cap.isOpened
 
     def get_processed_frame(self, frame, outputs):
             frame = self._draw_results_over_frame(frame, outputs)

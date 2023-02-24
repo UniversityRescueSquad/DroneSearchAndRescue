@@ -52,7 +52,9 @@ if __name__ == "__main__":
         # Detect objects in input video and save to output video
         logging.info(f"Start detecting objects in '{file}'")
         
-        video_editor.open_video_file(file)
+        if not video_editor.open_video_file(file):
+            logging.error(f'Could not open file {file}')
+            continue
         
         if args.output:
             video_editor.save_output_video(args.output)
