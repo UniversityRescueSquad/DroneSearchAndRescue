@@ -71,14 +71,43 @@ class VideoReader:
         time = datetime.timedelta(milliseconds=self.cap.get(cv2.CAP_PROP_POS_MSEC))
         logging.info(f'Video time: {time}.')
         return time
-
-    def _draw_boxes(self, frame, outputs):
-        for score, label, box in outputs:
+    
+    def _draw_boxes(self, frame, detections):
+        for score, label, box in detections:
             logging.info(f"Detected a {label} with confidence {score:.2f}.")
+
             x1, y1, x2, y2 = map(int, box)
+
+            # Define border parameters
+            border_thickness = 1
             color = self._get_color(label)
-            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+            padding = 5
+
+            # Draw narrow border around subject
+            cv2.rectangle(frame, (x1 + padding, y1 + padding), (x2 - padding, y2 - padding), color, border_thickness)
+            
+            # Define edges parameters
+            box_width = x2 - x1
+            box_height = y2 - y1
+            edge_length = int(min(box_width, box_height) * 0.1)
+            edge_thickness = 3
+            
+            # Draw wider corners
+            # Top left corner
+            cv2.line(frame, (x1 + padding, y1 + padding), (x1 + padding + edge_length, y1 + padding), color, edge_thickness)
+            cv2.line(frame, (x1 + padding, y1 + padding), (x1 + padding, y1 + padding + edge_length), color, edge_thickness)
+            # Top right corner
+            cv2.line(frame, (x2 - padding, y1 + padding), (x2 - padding - edge_length, y1 + padding), color, edge_thickness)
+            cv2.line(frame, (x2 - padding, y1 + padding), (x2 - padding, y1 + padding + edge_length), color, edge_thickness)
+            # Bottom left corner
+            cv2.line(frame, (x1 + padding, y2 - padding), (x1 + padding + edge_length, y2 - padding), color, edge_thickness)
+            cv2.line(frame, (x1 + padding, y2 - padding), (x1 + padding, y2 - padding - edge_length), color, edge_thickness)
+            # Bottom right corner
+            cv2.line(frame, (x2 - padding, y2 - padding), (x2 - padding - edge_length, y2 - padding), color, edge_thickness)
+            cv2.line(frame, (x2 - padding, y2 - padding), (x2 - padding, y2 - padding - edge_length), color, edge_thickness)
+            
             cv2.putText(frame, f'{label} {score:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            
         return frame
     
     def _draw_timestamp(self, frame):
