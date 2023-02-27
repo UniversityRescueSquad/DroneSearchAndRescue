@@ -124,8 +124,12 @@ class VideoProcessor:
             cv2.line(frame, (x2 - padding, y2 - padding), (x2 - padding - edge_length, y2 - padding), color, edge_thickness)
             cv2.line(frame, (x2 - padding, y2 - padding), (x2 - padding, y2 - padding - edge_length), color, edge_thickness)
             
-            cv2.putText(frame, f'{label} {score:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-            
+            label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
+            if y1 - 10 - label_size[1] < 0:
+                cv2.putText(frame, f'{label} {score:.2f}', (x1, y2 + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            else:
+                cv2.putText(frame, f'{label} {score:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
         return frame
     
     def _draw_timestamp(self, frame):
