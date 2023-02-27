@@ -21,9 +21,10 @@ class VideoProcessor:
 
     def save_output_video(self, output_file_path):
         if not output_file_path:
-            output_file_path = 'video/output_video.avi'
+            output_file_path = 'output/output_video.avi'
 
         output_file_path = self._check_and_append_video_extension(output_file_path)
+        self._create_directory(output_file_path)
 
         # Get video properties
         fps = self.cap.get(cv2.CAP_PROP_FPS)
@@ -124,16 +125,16 @@ class VideoProcessor:
             cv2.line(frame, (x2 - padding, y2 - padding), (x2 - padding - edge_length, y2 - padding), color, edge_thickness)
             cv2.line(frame, (x2 - padding, y2 - padding), (x2 - padding, y2 - padding - edge_length), color, edge_thickness)
             
-            label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
+            label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_DUPLEX, 0.5, 1)
             if y1 - 10 - label_size[1] < 0:
-                cv2.putText(frame, f'{label} {score:.2f}', (x1, y2 + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                cv2.putText(frame, f'{label} {score:.2f}', (x1, y2 + 10), cv2.FONT_HERSHEY_DUPLEX, 0.5, color, 1)
             else:
-                cv2.putText(frame, f'{label} {score:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                cv2.putText(frame, f'{label} {score:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_DUPLEX, 0.5, color, 1)
 
         return frame
     
     def _draw_timestamp(self, frame):
-        cv2.putText(frame, str(self._get_video_time()), (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        cv2.putText(frame, str(self._get_video_time()), (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_DUPLEX, 0.5, (0, 255, 0), 1)
         
         return frame
     
@@ -145,6 +146,11 @@ class VideoProcessor:
         self.colors[label] = color
         return color
     
+    def _create_directory(self, directory):
+        directory_path = os.path.dirname(directory)
+        if not os.path.exists(directory_path):
+            os.makedirs(directory_path)
+            
     def _setup_default_colors(self):
         # Colors in BGR (Blue, Green, Red)
         return {
