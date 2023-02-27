@@ -128,6 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+.vscode/
+
 videos/
 model/
 output.avi
