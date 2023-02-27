@@ -2,7 +2,7 @@ import logging
 import argparse
 import os
 from object_detector import ObjectDetector
-from video_reader_factory import VideoReaderFactory
+from video_processor_factory import VideoProcessorFactory
 
 def setup_logging():
     logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S", level=logging.INFO)
@@ -46,28 +46,27 @@ if __name__ == "__main__":
     setup_logging()
 
     detector = ObjectDetector()
-    video_reader = VideoReaderFactory.create_video_editor(args.detection_type)
+    video_processor = VideoProcessorFactory.create_video_editor(args.detection_type)
 
     for file in get_files(args.input):
         # Detect objects in input video and save to output video
         logging.info(f"Start detecting objects in '{file}'")
         
-        if not video_reader.open_video_file(file):
+        if not video_processor.open_video_file(file):
             logging.error(f'Could not open file {file}')
             continue
         
-        if args.output:
-            video_reader.save_output_video(args.output)
-
-        while video_reader.has_next_frame():
-            frame = video_reader.get_next_frame()
+        video_processor.save_output_video(args.output)
+        
+        while video_processor.has_next_frame():
+            frame = video_processor.get_next_frame()
 
             outputs = detector.detect(frame, confidence_threshold=args.confidence)
 
-            frame = video_reader.get_processed_frame(frame, outputs)
-            video_reader.show_frame(frame)
+            frame = video_processor.get_processed_frame(frame, outputs)
+            video_processor.show_frame(frame)
 
-            if video_reader.exit_video():
+            if video_processor.exit_video():
                 break
 
-        video_reader.close_video_file()
+        video_processor.close_video_file()

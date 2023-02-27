@@ -2,12 +2,12 @@ from abc import abstractmethod
 import cv2
 import logging
 import random
+import os
 import datetime
 
-class VideoReader:
+class VideoProcessor:
     def __init__(self):
         self.colors = self._setup_default_colors()
-        self.should_save_to_output_file = False
     
     @abstractmethod
     def get_next_frame(self):
@@ -20,21 +20,24 @@ class VideoReader:
         return self.cap.isOpened()
 
     def save_output_video(self, output_file_path):
-        self.should_save_to_output_file = True
+        if not output_file_path:
+            output_file_path = 'output_video.avi'
+
+        output_file_path = self._check_and_append_video_extension(output_file_path)
+
         # Get video properties
         fps = self.cap.get(cv2.CAP_PROP_FPS)
         width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
         # Create output video writer
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         self.output_video = cv2.VideoWriter(output_file_path, fourcc, fps, (width, height))
 
     def close_video_file(self):
         # Release resources
         self.cap.release()
-        if self.should_save_to_output_file:
-            self.output_video.release()
+        self.output_video.release()
         cv2.destroyAllWindows()
 
     def has_next_frame(self):
@@ -49,16 +52,31 @@ class VideoReader:
         cv2.imshow("output", frame)
 
     def save_to_output_file(self, frame):
-        if self.should_save_to_output_file:
-            # Write the frame to the output video file
-            self.out.write(frame)
+        # Write the frame to the output video file
+        self.output_video.write(frame)
+    
+    def save_current_frame(self, frame):
+        file_name = f"frame_{self.frame_index}.jpg"
+        cv2.imwrite(file_name, frame)
 
     def exit_video(self):
         # Exit on ESC key
         if cv2.waitKey(1) == 27:
+            logging.info("ESC key pressed. Exiting video.")
             return True
         
         return False
+
+    def _check_and_append_video_extension(self, filename):
+        """
+        This function takes a string representing a filename as input, checks if it has a video extension,
+        and appends '.avi' to the end of the filename if it doesn't.
+        """
+        video_extensions = ['.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv']
+        file_extension = os.path.splitext(filename)[1]
+        if file_extension.lower() not in video_extensions:
+            filename = os.path.splitext(filename)[0] + '.avi'
+        return filename
 
     def _draw_results_over_frame(self, frame, outputs):
         # Draw bounding boxes
@@ -129,9 +147,9 @@ class VideoReader:
             'person': (0, 0, 255) # Red
         }
 
-class FastVideoReader(VideoReader):
+class FastVideoProcessor(VideoProcessor):
     def __init__(self):
-        super(FastVideoReader, self).__init__()
+        super(FastVideoProcessor, self).__init__()
         self.frame_rate = 5 # One frame every 5 seconds
         self.current_frame = 0
 
@@ -144,9 +162,9 @@ class FastVideoReader(VideoReader):
         else:
             return None
 
-class MediumVideoReader(VideoReader):
+class MediumVideoProcessor(VideoProcessor):
     def __init__(self):
-        super(MediumVideoReader, self).__init__()
+        super(MediumVideoProcessor, self).__init__()
         self.frame_rate = 1 # One frame every second
         self.current_frame = 0
 
@@ -159,9 +177,9 @@ class MediumVideoReader(VideoReader):
         else:
             return None
 
-class CompleteVideoReader(VideoReader):
+class CompleteVideoProcessor(VideoProcessor):
     def __init__(self):
-        super(CompleteVideoReader, self).__init__()
+        super(CompleteVideoProcessor, self).__init__()
 
     def get_next_frame(self):
         ret, frame = self.cap.read()
