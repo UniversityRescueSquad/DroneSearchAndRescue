@@ -2,7 +2,7 @@ from video_processor import MediumVideoProcessor, FastVideoProcessor, CompleteVi
 
 class VideoProcessorFactory:
     @staticmethod
-    def create_video_editor(editor_type):
+    def create_video_processor(editor_type):
         if editor_type == 'Fast':
             return FastVideoProcessor()
         elif editor_type == 'Medium':

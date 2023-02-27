@@ -46,7 +46,7 @@ if __name__ == "__main__":
     setup_logging()
 
     detector = ObjectDetector()
-    video_processor = VideoProcessorFactory.create_video_editor(args.detection_type)
+    video_processor = VideoProcessorFactory.create_video_processor(args.detection_type)
 
     for file in get_files(args.input):
         # Detect objects in input video and save to output video
@@ -57,7 +57,7 @@ if __name__ == "__main__":
             continue
         
         video_processor.save_output_video(args.output)
-        
+
         while video_processor.has_next_frame():
             frame = video_processor.get_next_frame()
 
