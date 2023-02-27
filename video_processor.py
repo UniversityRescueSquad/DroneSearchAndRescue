@@ -21,7 +21,7 @@ class VideoProcessor:
 
     def save_output_video(self, output_file_path):
         if not output_file_path:
-            output_file_path = 'output_video.avi'
+            output_file_path = 'video/output_video.avi'
 
         output_file_path = self._check_and_append_video_extension(output_file_path)
 

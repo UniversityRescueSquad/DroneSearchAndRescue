@@ -31,11 +31,8 @@ class ObjectDetector:
         return inputs
 
     def _postprocess(self, frame, outputs, confidence_threshold):
-        # convert outputs (bounding boxes and class logits) to COCO API
-        frame_height, frame_width = frame.shape[:2]
-        frame_size = (frame_height, frame_width)
-        num_images = outputs["logits"].shape[0]
-        target_sizes = [frame_size] * num_images
+        # convert outputs (bounding boxes and class logits)
+        target_sizes = [([frame.shape[0], frame.shape[1]])]
         results = self.processor.post_process_object_detection(outputs, target_sizes=target_sizes, threshold=confidence_threshold)[0]
         
         results['boxes'] = [[round(i, 2) for i in box.tolist()] for box in results['boxes']]
