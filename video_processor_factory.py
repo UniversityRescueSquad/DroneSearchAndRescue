@@ -1,8 +1,8 @@
-from video_processor import MediumVideoProcessor, FastVideoProcessor, CompleteVideoProcessor  
+from video_processor import MediumVideoProcessor, FastVideoProcessor, CompleteVideoProcessor, VideoProcessor  
 
 class VideoProcessorFactory:
     @staticmethod
-    def create_video_processor(editor_type):
+    def create_video_processor(editor_type: str) -> VideoProcessor:
         if editor_type == 'Fast':
             return FastVideoProcessor()
         elif editor_type == 'Medium':

@@ -1,11 +1,12 @@
 import argparse
 import os
 import logging
+from typing import List
 
-def setup_logging():
+def setup_logging() -> None:
     logging.basicConfig(format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S", level=logging.INFO)
 
-def get_files(location):
+def get_files(location: str) -> List:
     """
     Returns all files in the specified location if it is a folder,
     or returns an array with the specified file if the location is pointing to a file.
@@ -28,7 +29,7 @@ def get_files(location):
         # if location does not exist
         raise ValueError("Location does not exist.")
 
-def parse_args():
+def parse_args() -> None:
     parser = argparse.ArgumentParser(description="Human detection using machine learning")
     parser.add_argument("--input", required=False, help="Path to input video file")
     parser.add_argument("--output", help="Output video file path")
