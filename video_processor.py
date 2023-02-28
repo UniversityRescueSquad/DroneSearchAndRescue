@@ -25,7 +25,7 @@ class VideoProcessor:
 
     def save_output_video(self, output_file_path: str) -> None:
         if not output_file_path:
-            output_file_path = 'output/output_video.avi'
+            output_file_path = 'output/output_video.mp4'
 
         output_file_path = self._check_and_append_video_extension(output_file_path)
         self._create_directory(output_file_path)
@@ -75,12 +75,12 @@ class VideoProcessor:
     def _check_and_append_video_extension(self, filename: str) -> str:
         """
         This function takes a string representing a filename as input, checks if it has a video extension,
-        and appends '.avi' to the end of the filename if it doesn't.
+        and appends '.mp4' to the end of the filename if it doesn't.
         """
         video_extensions = ['.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv']
         file_extension = os.path.splitext(filename)[1]
         if file_extension.lower() not in video_extensions:
-            filename = os.path.splitext(filename)[0] + '.avi'
+            filename = os.path.splitext(filename)[0] + '.mp4'
         return filename
 
     def _draw_results_over_frame(self, frame: np.ndarray, outputs: dict) -> np.ndarray:
