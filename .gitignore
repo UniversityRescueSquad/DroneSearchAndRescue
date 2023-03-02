@@ -134,3 +134,5 @@ videos/
 output/
 model/
 output.avi
+
+drone_sar/data
