@@ -34,6 +34,6 @@ def parse_args() -> None:
     parser.add_argument("--input", required=False, help="Path to input video file")
     parser.add_argument("--output", help="Output video file path")
     parser.add_argument("--confidence", type=float, default=0.9, help="Object detection confidence threshold")
-    parser.add_argument("--detection_type", default="Fast", help="Editor level (Fast, Medium, Complete)")
+    parser.add_argument("--detection_type", default="Binary", help="Editor level (Binary, Fast, Complete)")
     return parser.parse_args()
     
