@@ -2,9 +2,9 @@
 The Drone Search and Rescue project is a tool designed to enchance full-scale search and rescue operations through object detection within drone-generated video content.
 
 # Description
-The University Rescue Squad is a first responders rescue organization in Bulgaria that conducts search and rescue (SaR) operations in all kinds of natural terrain. During such operations, often aerial reconnaissance is employed deploying unmanned aerial vehicles to survey areas where missing persons are anticipated to be located. However, the subsequent manual review of the captured video footage introduces the high possibility of human errors.
+The University Rescue Squad is a first responders rescue organization in Bulgaria that conducts search and rescue (SaR) operations in all kinds of natural terrain. During such operations, often aerial reconnaissance is employed deploying unmanned aerial vehicles to survey areas where missing persons are believed to be located. However, the subsequent manual review of the captured video footage introduces the high possibility of human errors.
 
-The Drone Search and Rescue project addresses this concern by developing an efficient system for object detection within drone-captured video footage. The project specifically targets the identification of various objects like humans, backpacks, bicycles etc.
+The Drone Search and Rescue project addresses this concern by developing a system for object detection within drone-captured video footage. The project specifically targets the identification of various objects like humans, backpacks, bicycles etc.
 
 # Installation
 
