@@ -34,9 +34,12 @@ class IPSARDataset(Dataset):
         file_identifier, ext = file_name.split(".")
         annotation_path = os.path.join(self.labels_path, f"{file_identifier}.xml")
         annotation = self._parse_annotation(annotation_path)
-        pixel_values = torch.tensor(np.array(Image.open(image_path)))
+        pil = Image.open(image_path)
+        pixel_values = torch.tensor(np.array(pil))
 
         return {
+            "img_path": image_path,
+            "pil": pil,
             "pixel_values": pixel_values,
             "boxes": annotation["boxes"],
             "class_labels": annotation["class_labels"],
