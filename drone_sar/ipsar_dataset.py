@@ -7,22 +7,27 @@ import numpy as np
 
 
 class IPSARDataset(Dataset):
-    def __init__(self, images_root: str):
+    def __init__(self, images_root: str, load_images=True):
+        self.load_images = load_images
         self.labels_path = os.path.join(images_root, "labels")
         image_paths = [os.path.join(images_root, f) for f in os.listdir(images_root)]
         self.image_paths = [path for path in image_paths if os.path.isfile(path)]
 
     def _parse_annotation(self, annotation_path: str) -> dict:
-        root = ElementTree.parse(annotation_path).getroot()
-        boxes = []
-        for obj in root.findall("object"):
-            if obj.find("name").text == "human":
-                bbox = obj.find("bndbox")
-                xmin = int(bbox.find("xmin").text)
-                ymin = int(bbox.find("ymin").text)
-                xmax = int(bbox.find("xmax").text)
-                ymax = int(bbox.find("ymax").text)
-                boxes.append([xmin, ymin, xmax, ymax])
+        if os.path.exists(annotation_path):
+            root = ElementTree.parse(annotation_path).getroot()
+            boxes = []
+            for obj in root.findall("object"):
+                if obj.find("name").text == "human":
+                    bbox = obj.find("bndbox")
+                    xmin = int(bbox.find("xmin").text)
+                    ymin = int(bbox.find("ymin").text)
+                    xmax = int(bbox.find("xmax").text)
+                    ymax = int(bbox.find("ymax").text)
+                    boxes.append([xmin, ymin, xmax, ymax])
+        else:
+            boxes = []
+
         return {
             "boxes": torch.tensor(boxes, dtype=torch.float32),
             "class_labels": torch.ones(len(boxes), dtype=torch.int64),
@@ -34,8 +39,13 @@ class IPSARDataset(Dataset):
         file_identifier, ext = file_name.split(".")
         annotation_path = os.path.join(self.labels_path, f"{file_identifier}.xml")
         annotation = self._parse_annotation(annotation_path)
-        pil = Image.open(image_path)
-        pixel_values = torch.tensor(np.array(pil))
+        
+        pil = lambda: Image.open(image_path)
+        pixel_values = lambda: torch.tensor(np.array(pil))
+
+        if self.load_images:
+            pil = pil()
+            pixel_values = pixel_values()
 
         return {
             "img_path": image_path,
