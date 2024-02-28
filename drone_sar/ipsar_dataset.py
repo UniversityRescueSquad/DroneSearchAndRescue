@@ -6,6 +6,7 @@ from xml.etree import ElementTree
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
+import joblib
 
 
 class IPSARDataset(Dataset):
@@ -63,14 +64,33 @@ class IPSARDataset(Dataset):
 
     @staticmethod
     def collate_fn(items, processor):
+        @joblib.Memory("~/.cache", verbose=0).cache
+        def preprocess_cached(im_path):
+            dos = {
+                "do_resize": True,
+                "do_rescale": True,
+                "do_normalize": True,
+                "do_pad": False,
+            }
+            prep_image = (
+                processor(images=Image.open(im_path), return_tensors="pt", **dos)[
+                    "pixel_values"
+                ][0]
+                .permute(1, 2, 0)
+                .detach()
+                .cpu()
+                .numpy()
+            )
+            return prep_image
+
         dos = {
-            "do_resize": True,
-            "do_rescale": True,
-            "do_normalize": True,
+            "do_resize": False,
+            "do_rescale": False,
+            "do_normalize": False,
             "do_pad": True,
         }
-        images = [it["pil"] for it in items]
-        sizes = [im.size for im in images]
+        images = [preprocess_cached(it["img_path"]) for it in items]
+        sizes = [im.shape[:2] for im in images]
         processed_images = processor(images=images, return_tensors="pt", **dos)
 
         def format_annotation(boxes, W, H):
@@ -88,7 +108,7 @@ class IPSARDataset(Dataset):
                 "boxes": format_annotation(it["boxes"], W, H),
                 "class_labels": torch.zeros(len(it["boxes"]), dtype=torch.long),
             }
-            for it, (W, H) in zip(items, sizes)
+            for it, (H, W) in zip(items, sizes)
         ]
         info = {"target_sizes": sizes}
         return {"labels": labels, **processed_images}, info
