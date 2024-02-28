@@ -72,16 +72,15 @@ class IPSARDataset(Dataset):
                 "do_normalize": True,
                 "do_pad": False,
             }
+            image = Image.open(im_path)
             prep_image = (
-                processor(images=Image.open(im_path), return_tensors="pt", **dos)[
-                    "pixel_values"
-                ][0]
+                processor(images=image, return_tensors="pt", **dos)["pixel_values"][0]
                 .permute(1, 2, 0)
                 .detach()
                 .cpu()
                 .numpy()
             )
-            return prep_image
+            return prep_image, image.size
 
         dos = {
             "do_resize": False,
@@ -89,8 +88,9 @@ class IPSARDataset(Dataset):
             "do_normalize": False,
             "do_pad": True,
         }
-        images = [preprocess_cached(it["img_path"]) for it in items]
-        sizes = [im.shape[:2] for im in images]
+        preprocessed = [preprocess_cached(it["img_path"]) for it in items]
+        images = [image for image, size in preprocessed]
+        sizes = [size for image, size in preprocessed]
         processed_images = processor(images=images, return_tensors="pt", **dos)
 
         def format_annotation(boxes, W, H):
@@ -108,7 +108,7 @@ class IPSARDataset(Dataset):
                 "boxes": format_annotation(it["boxes"], W, H),
                 "class_labels": torch.zeros(len(it["boxes"]), dtype=torch.long),
             }
-            for it, (H, W) in zip(items, sizes)
+            for it, (W, H) in zip(items, sizes)
         ]
         info = {"target_sizes": sizes}
         return {"labels": labels, **processed_images}, info
