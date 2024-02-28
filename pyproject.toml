@@ -16,6 +16,8 @@ pillow = "^9.4.0"
 timm = "^0.6.12"
 matplotlib = "^3.8.2"
 jupyter = "^1.0.0"
+lightning = "^2.2.0.post0"
+tensorboard = "^2.16.2"
 
 
 [build-system]
