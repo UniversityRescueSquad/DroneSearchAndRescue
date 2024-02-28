@@ -17,7 +17,7 @@ def get_lightning_trainer(model_name, max_epochs):
     optim_metric = "val_loss"
     optim_metric_mode = "min"
 
-    logger = TensorBoardLogger("tb_logs2", name=model_name)
+    logger = TensorBoardLogger("logs/", name=model_name)
     early_stop = EarlyStopping(
         monitor=optim_metric, mode=optim_metric_mode, patience=50
     )
@@ -28,31 +28,43 @@ def get_lightning_trainer(model_name, max_epochs):
         mode=optim_metric_mode,
     )
     profiler = AdvancedProfiler(dirpath=".", filename="perf_logs")
-    device_monitor = DeviceStatsMonitor(cpu_stats=False)
+    # device_monitor = DeviceStatsMonitor(cpu_stats=False)
 
     trainer = L.Trainer(
         max_epochs=max_epochs,
         logger=logger,
-        callbacks=[early_stop, checkpoint_callback, device_monitor],
+        callbacks=[early_stop, checkpoint_callback],
         profiler=profiler,
+        gradient_clip_val=0.1,
+        accelerator="gpu",
     )
 
     return trainer
 
 
 class LightningDetector(L.LightningModule):
-    def __init__(self):
+    def __init__(self, lr):
         super().__init__()
-        self.rocessor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
-        self.mode = DetrForObjectDetection.from_pretrained(
+        self.processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
+        self.model = DetrForObjectDetection.from_pretrained(
             "facebook/detr-resnet-50",
             num_labels=1,
             ignore_mismatched_sizes=True,
         )
+        self.lr = lr
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         return optimizer
+
+    def forward(self, input):
+        batch, info = input
+        num_boxes = sum([len(l["boxes"]) for l in batch["labels"]])
+        if num_boxes == 0:
+            return None  # Skip the optim step if no boxes present (we get an error otherwise)
+
+        output = self.model(**batch)
+        return output
 
     def optim_step(self, input, flavour):
         batch, info = input
@@ -63,7 +75,7 @@ class LightningDetector(L.LightningModule):
         output = self.model(**batch)
         self.log(f"{flavour}_loss", output["loss"])
         for lk, lv in output["loss_dict"].items():
-            self.lof(f"{flavour}_{lk}", lv)
+            self.log(f"{flavour}_{lk}", lv)
         return output["loss"]
 
     def training_step(self, input, batch_index):
