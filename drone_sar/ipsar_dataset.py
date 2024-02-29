@@ -43,11 +43,9 @@ class IPSARDataset(Dataset):
         plt.tight_layout()
         ax.imshow(np_pil, alpha=im_opacity)
 
-        for x1, y1, x2, y2 in item["boxes"]:
-            w = x2 - x1
-            h = y2 - y1
+        for x, y, w, h in item["boxes"]:
             ax.add_patch(
-                Rectangle((x1, y1), w, h, fill=None, edgecolor="red", linewidth=1)
+                Rectangle((x, y), w, h, fill=None, edgecolor="red", linewidth=1)
             )
 
         plt.close()
@@ -124,9 +122,9 @@ class IPSARDataset(Dataset):
                     ymin = int(bbox.find("ymin").text)
                     xmax = int(bbox.find("xmax").text)
                     ymax = int(bbox.find("ymax").text)
-                    boxes.append([xmin, ymin, xmax, ymax])
+                    boxes.append([xmin, ymin, xmax - xmin, ymax - ymin])
         else:
-            boxes = []
+            boxes = np.zeros((0, 4), dtype=float)
 
         return {
             "boxes": torch.tensor(boxes, dtype=torch.float32),

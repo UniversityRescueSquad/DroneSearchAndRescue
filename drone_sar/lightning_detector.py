@@ -59,19 +59,11 @@ class LightningDetector(L.LightningModule):
 
     def forward(self, input):
         batch, info = input
-        num_boxes = sum([len(l["boxes"]) for l in batch["labels"]])
-        if num_boxes == 0:
-            return None  # Skip the optim step if no boxes present (we get an error otherwise)
-
         output = self.model(**batch)
         return output
 
     def optim_step(self, input, flavour):
         batch, info = input
-        num_boxes = sum([len(l["boxes"]) for l in batch["labels"]])
-        if num_boxes == 0:
-            return None  # Skip the optim step if no boxes present (we get an error otherwise)
-
         output = self.model(**batch)
         self.log(f"{flavour}_loss", output["loss"])
         for lk, lv in output["loss_dict"].items():
