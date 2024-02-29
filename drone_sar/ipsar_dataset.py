@@ -1,88 +1,134 @@
 import os
 import torch
-import logging
-import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 from xml.etree import ElementTree
-from object_detector import ObjectDetector
-from utils import setup_logging
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+import joblib
 
 
 class IPSARDataset(Dataset):
-    """
-    A PyTorch dataset for the IPSAR dataset.
+    def __init__(self, images_root: str):
+        self.labels_path = os.path.join(images_root, "labels")
+        image_paths = [os.path.join(images_root, f) for f in os.listdir(images_root)]
+        self.image_paths = [path for path in image_paths if os.path.isfile(path)]
 
-    Args:
-        root_dir (str): The path to the root directory of the IPSAR dataset.
-        split_type (str): The name of the dataset split ("train" or "test").
-    """
+    def __getitem__(self, index: int) -> dict:
+        image_path = self.image_paths[index]
+        dir_path, file_name = os.path.split(image_path)
+        file_identifier, ext = file_name.split(".")
 
-    def __init__(self, root_dir: str, split_type: str):
-        assert split_type in ["train", "test"], f"Invalid set name: {split_type}"
+        annotation_path = os.path.join(self.labels_path, f"{file_identifier}.xml")
+        annotation = self._parse_annotation(annotation_path)
+        pil = Image.open(image_path)
 
-        self.images_path = os.path.join(root_dir, "heridal", split_type + "Images")
-        self.labels_path = os.path.join(self.images_path, "labels")
-        self.dataset = self._create_dataset()
+        return {
+            "img_path": image_path,
+            "pil": pil,
+            "target_sizes": pil.size,
+            "boxes": annotation["boxes"],
+            "class_labels": annotation["class_labels"],
+        }
 
-    def _create_dataset(self) -> Dataset:
-        dataset = []
-        for filename in os.listdir(os.path.join(self.images_path)):
-            if filename.endswith(".JPG"):
-                img_path = os.path.join(self.images_path, filename)
-                annotation_path = os.path.join(
-                    self.labels_path, filename.split(".")[0] + ".xml"
-                )
+    def __len__(self) -> int:
+        return len(self.image_paths)
 
-                if os.path.exists(annotation_path):
-                    annotation = self._parse_annotation(annotation_path)
-                    if len(annotation["boxes"]) > 0:
-                        dataset.append(
-                            (
-                                np.asarray(Image.open(img_path)),
-                                {
-                                    "boxes": annotation["boxes"][0],
-                                    "class_labels": annotation["class_labels"][0],
-                                },
-                            )
-                        )
-                    else:
-                        # TODO: Add empty dataset entry
-                        continue
+    @staticmethod
+    def plt_show(item, size=10, im_opacity=0.5):
+        np_pil = np.array(item["pil"])
 
-        logging.info(
-            f"{len(dataset)} number of annotated images loaded in {self.images_path}"
+        fig, ax = plt.subplots(dpi=100, figsize=(size, size))
+        plt.tight_layout()
+        ax.imshow(np_pil, alpha=im_opacity)
+
+        for x1, y1, x2, y2 in item["boxes"]:
+            w = x2 - x1
+            h = y2 - y1
+            ax.add_patch(
+                Rectangle((x1, y1), w, h, fill=None, edgecolor="red", linewidth=1)
+            )
+
+        plt.close()
+
+        return fig
+
+    def get_dataloader(self, processor, bs, shuffle):
+        return torch.utils.data.DataLoader(
+            self,
+            shuffle=shuffle,
+            batch_size=bs,
+            collate_fn=lambda b: self.collate_fn(b, processor),
         )
-        return dataset
+
+    @staticmethod
+    def collate_fn(items, processor):
+        @joblib.Memory("~/.cache", verbose=0).cache
+        def preprocess_cached(im_path):
+            dos = {
+                "do_resize": True,
+                "do_rescale": True,
+                "do_normalize": True,
+                "do_pad": False,
+            }
+            image = Image.open(im_path)
+            prep_image = (
+                processor(images=image, return_tensors="pt", **dos)["pixel_values"][0]
+                .permute(1, 2, 0)
+                .detach()
+                .cpu()
+                .numpy()
+            )
+            return prep_image, image.size
+
+        dos = {
+            "do_resize": False,
+            "do_rescale": False,
+            "do_normalize": False,
+            "do_pad": True,
+        }
+        preprocessed = [preprocess_cached(it["img_path"]) for it in items]
+        images = [image for image, size in preprocessed]
+        sizes = [size for image, size in preprocessed]
+        processed_images = processor(images=images, return_tensors="pt", **dos)
+
+        def format_annotation(boxes, W, H):
+            if len(boxes) == 0:
+                return boxes
+            boxes = boxes.clone()
+            boxes[:, 0] /= W
+            boxes[:, 1] /= H
+            boxes[:, 2] /= W
+            boxes[:, 3] /= H
+            return boxes
+
+        labels = [
+            {
+                "boxes": format_annotation(it["boxes"], W, H),
+                "class_labels": torch.zeros(len(it["boxes"]), dtype=torch.long),
+            }
+            for it, (W, H) in zip(items, sizes)
+        ]
+        info = {"target_sizes": sizes}
+        return {"labels": labels, **processed_images}, info
 
     def _parse_annotation(self, annotation_path: str) -> dict:
-        root = ElementTree.parse(annotation_path).getroot()
-        boxes = []
-        for obj in root.findall("object"):
-            if obj.find("name").text == "human":
-                bbox = obj.find("bndbox")
-                xmin = int(bbox.find("xmin").text)
-                ymin = int(bbox.find("ymin").text)
-                xmax = int(bbox.find("xmax").text)
-                ymax = int(bbox.find("ymax").text)
-                boxes.append([xmin, ymin, xmax, ymax])
+        if os.path.exists(annotation_path):
+            root = ElementTree.parse(annotation_path).getroot()
+            boxes = []
+            for obj in root.findall("object"):
+                if obj.find("name").text == "human":
+                    bbox = obj.find("bndbox")
+                    xmin = int(bbox.find("xmin").text)
+                    ymin = int(bbox.find("ymin").text)
+                    xmax = int(bbox.find("xmax").text)
+                    ymax = int(bbox.find("ymax").text)
+                    boxes.append([xmin, ymin, xmax, ymax])
+        else:
+            boxes = []
+
         return {
             "boxes": torch.tensor(boxes, dtype=torch.float32),
             "class_labels": torch.ones(len(boxes), dtype=torch.int64),
         }
-
-    def __getitem__(self, index: int) -> dict:
-        return self.dataset[index]
-
-    def __len__(self) -> int:
-        return len(self.dataset)
-
-
-if __name__ == "__main__":
-    setup_logging()
-
-    train_data = IPSARDataset("drone_sar/data", "train")
-    test_data = IPSARDataset("drone_sar/data", "test")
-
-    detector = ObjectDetector()
-    detector.fine_tune(train_data, test_data)

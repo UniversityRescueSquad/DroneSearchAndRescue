@@ -136,3 +136,8 @@ model/
 output.avi
 
 drone_sar/data
+heridal*
+
+lightning_logs
+logs
+.checkpoints
