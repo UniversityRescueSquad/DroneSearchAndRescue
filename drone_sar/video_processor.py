@@ -6,12 +6,14 @@ import random
 import os
 import datetime
 import numpy as np
+import queue
 
 class VideoProcessor:
     def __init__(self) -> None:
         self.colors = self._setup_default_colors()
         self.cap: cv2.VideoCapture
         self.output_video: cv2.VideoWriter
+        self.frame_count: int
     
     @abstractmethod
     def get_next_frame(self) -> np.ndarray:
@@ -20,6 +22,7 @@ class VideoProcessor:
     def open_video_file(self, input_file_path: str) -> bool:
         # Open input video file
         self.cap = cv2.VideoCapture(input_file_path)
+        self.frame_count = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
         
         return self.cap.isOpened()
 
@@ -161,24 +164,76 @@ class VideoProcessor:
             'person': (0, 0, 255) # Red
         }
 
+class BinaryProcessor(VideoProcessor):
+    """
+    A processor that processes a video in binary-search-like order.
+
+    It splits the given video in equal parts, yielding the middle index,
+    then splits those parts into equal parts yielding the middle index of those smaller parts etc.
+    The idea is to scan through the biggest part of the video for the least amount of time.
+    It still yields every index at the end, taking the same amount of time as doing a full process of a video, 
+    but the order in which it yields values allows us to efectivelly scan through the whole video (every second frame) 
+    for half of the time and also do a rapid scan through every major section in the video as fast as possible.
+    The processor doesn't take the video content into account but only the timestamp of the frames.
+    """
+
+    def __init__(self) -> None:
+        super(BinaryProcessor, self).__init__()
+        self.generator = None
+        self.queue = queue.Queue()
+
+    def get_next_frame(self):
+        # Initial setup
+        if(self.generator is None):
+            frame_count = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            self.generator = self._binary_search_indices(frame_count)
+        
+        frame_index = next(self.generator)
+
+        if frame_index is None:
+            return None
+        
+        # Set the frame position and read the frame
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
+        _, frame = self.cap.read()
+        return frame
+
+    def _binary_search_indices(self, frame_count):
+        """
+        A generator that yields frame indices using binary-search-like technique.
+
+        Args:
+            frame_count (int): Total number of frames in the video.
+
+        Yields:
+            int or None: The index of the frame to be processed, or None to signal the end.
+        """
+        self.queue.put((0, frame_count))
+
+        while not self.queue.empty():
+            left_index, right_index = self.queue.get()
+            mid = (left_index + right_index) // 2
+
+            if (right_index is not left_index):
+                if(left_index is not mid) and (mid - left_index != 1):
+                    self.queue.put((left_index, mid))
+                if(right_index is not mid) and (right_index - mid != 1):    
+                    self.queue.put((mid, right_index))
+
+            yield mid
+
+        yield None
+
 class FastVideoProcessor(VideoProcessor):
+    """
+    A processor that processes only one frame from every second in a video.
+
+    The processor will return only one frame from every second in a video, meaning that
+    for a 60 second video with 25 frames a second (1500 frames), it would return 60 frames in total.
+    """
+
     def __init__(self) -> None:
         super(FastVideoProcessor, self).__init__()
-        self.frame_rate = 5 # One frame every 5 seconds
-        self.current_frame = 0
-
-    def get_next_frame(self) -> np.ndarray:
-        self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame)
-        ret, frame = self.cap.read()
-        if ret:
-            self.current_frame += self.frame_rate * self.cap.get(cv2.CAP_PROP_FPS)
-            return frame
-        else:
-            return None
-
-class MediumVideoProcessor(VideoProcessor):
-    def __init__(self) -> None:
-        super(MediumVideoProcessor, self).__init__()
         self.frame_rate = 1 # One frame every second
         self.current_frame = 0
 
@@ -192,6 +247,10 @@ class MediumVideoProcessor(VideoProcessor):
             return None
 
 class CompleteVideoProcessor(VideoProcessor):
+    """
+    A complete processor that processes a video frame by frame in chronological order.
+    """
+
     def __init__(self) -> None:
         super(CompleteVideoProcessor, self).__init__()
 
