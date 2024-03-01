@@ -112,9 +112,9 @@ class IPSARDataset(Dataset):
         return {"labels": labels, **processed_images}, info
 
     def _parse_annotation(self, annotation_path: str) -> dict:
+        boxes = []
         if os.path.exists(annotation_path):
             root = ElementTree.parse(annotation_path).getroot()
-            boxes = []
             for obj in root.findall("object"):
                 if obj.find("name").text == "human":
                     bbox = obj.find("bndbox")
@@ -123,7 +123,8 @@ class IPSARDataset(Dataset):
                     xmax = int(bbox.find("xmax").text)
                     ymax = int(bbox.find("ymax").text)
                     boxes.append([xmin, ymin, xmax - xmin, ymax - ymin])
-        else:
+
+        if len(boxes) == 0:
             boxes = np.zeros((0, 4), dtype=float)
 
         return {
