@@ -77,3 +77,14 @@ class LightningDetector(L.LightningModule):
     def validation_step(self, input, batch_index):
         loss = self.optim_step(input, flavour="val")
         return loss
+
+    def predict(self, dl, processor, T=0.5):
+        trainer = get_lightning_trainer("PREDICTION", max_epochs=-1)
+        dl_list = list(dl)
+        outputs = trainer.predict(self, dl_list)
+        post_proc_outs = [
+            processor.post_process_object_detection(
+                otput, threshold=T, target_sizes=[["target_sizes"][::-1]]
+            )
+            for output, item in zip(outputs, dl_list)
+        ]
