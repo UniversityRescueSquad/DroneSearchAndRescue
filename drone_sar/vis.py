@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
 
-def plt_show(pil, colored_boxes_dict, size=10, im_opacity=0.5):
+def show_detections(pil, colored_boxes_dict, size=10, im_opacity=0.5):
     np_pil = pil
 
     fig, ax = plt.subplots(dpi=100, figsize=(size, size))

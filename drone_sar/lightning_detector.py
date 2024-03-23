@@ -1,3 +1,4 @@
+import numpy as np
 from transformers import DetrImageProcessor, DetrForObjectDetection
 import lightning as L
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
@@ -78,13 +79,21 @@ class LightningDetector(L.LightningModule):
         loss = self.optim_step(input, flavour="val")
         return loss
 
-    def predict(self, dl, processor, T=0.5):
-        trainer = get_lightning_trainer("PREDICTION", max_epochs=-1)
-        dl_list = list(dl)
-        outputs = trainer.predict(self, dl_list)
-        post_proc_outs = [
-            processor.post_process_object_detection(
-                otput, threshold=T, target_sizes=[["target_sizes"][::-1]]
-            )
-            for output, item in zip(outputs, dl_list)
-        ]
+    def predict(self, pil, T=0.5):
+        dos = {
+            "do_resize": True,
+            "do_rescale": True,
+            "do_normalize": True,
+            "do_pad": False,
+        }
+        prep_input = self.processor(images=pil, return_tensors="pt", **dos)
+        raw_out = self.model.forward(**prep_input)
+
+        W, H = pil.size
+        logits = raw_out["logits"][0]
+        boxes = raw_out["pred_boxes"][0]
+        threshold_mask = torch.argmax(-logits, axis=-1).to(bool)
+        valid_boxes = boxes[threshold_mask, :]
+        valid_boxes = valid_boxes.detach().cpu().numpy()
+        valid_boxes = valid_boxes * np.array([[W, H, W, H]])
+        return valid_boxes

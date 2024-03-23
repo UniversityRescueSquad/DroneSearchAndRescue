@@ -35,23 +35,6 @@ class IPSARDataset(Dataset):
     def __len__(self) -> int:
         return len(self.image_paths)
 
-    @staticmethod
-    def plt_show(item, size=10, im_opacity=0.5):
-        np_pil = np.array(item["pil"])
-
-        fig, ax = plt.subplots(dpi=100, figsize=(size, size))
-        plt.tight_layout()
-        ax.imshow(np_pil, alpha=im_opacity)
-
-        for x, y, w, h in item["boxes"]:
-            ax.add_patch(
-                Rectangle((x, y), w, h, fill=None, edgecolor="red", linewidth=1)
-            )
-
-        plt.close()
-
-        return fig
-
     def get_dataloader(self, processor, bs, shuffle):
         return torch.utils.data.DataLoader(
             self,
