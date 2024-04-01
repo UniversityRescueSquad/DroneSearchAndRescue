@@ -79,14 +79,16 @@ class LightningDetector(L.LightningModule):
         loss = self.optim_step(input, flavour="val")
         return loss
 
-    def predict(self, pil, T=0.5):
+    def predict(self, pil):
         dos = {
             "do_resize": True,
             "do_rescale": True,
             "do_normalize": True,
             "do_pad": False,
         }
+        device = self.device()
         prep_input = self.processor(images=pil, return_tensors="pt", **dos)
+        prep_input = {k: v.to(device) for k, v in prep_input.items()}
         raw_out = self.model.forward(**prep_input)
 
         W, H = pil.size
