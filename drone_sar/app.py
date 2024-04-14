@@ -27,11 +27,12 @@ class VideoIndexable:
         if success:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             frame = Image.fromarray(frame)
-            return frame
+            id = self.path, index
+            return id, frame
 
 
 def indexable_file_loader(path):
-    ext = path.split(".")[-1:].lower()
+    ext = path.split(".")[-1].lower()
     if ext in ["mp4"]:
         return VideoIndexable(path)
     raise NotImplementedError()
@@ -54,53 +55,62 @@ class SimpleSampler:
 
 
 class PredictionManager:
-    def __init__(self, subscribers) -> None:
+    def __init__(self) -> None:
         frame_indexable = indexable_file_loader("/home/iz/workspace/DJI_0002.MP4")
         sampler = SimpleSampler(len(frame_indexable))
         self.model = LightningDetector.load_from_checkpoint(
-            "/home/iz/workspace/DroneSearchAndRescue/.checkpoints/epoch=65-step=10494.ckpt"
+            "/home/iz/workspace/DroneSearchAndRescue/.checkpoints/epoch=65-step=10494.ckpt",
+            lr=0.01,
         )
-        self.subscribers = subscribers
-
+        self.subscribers = []
         self.predictions_state = {}
-        is_running = False
-        thread = threading.Thread(target=run)
-        thread.start()
+        # is_running = False
+        # thread = threading.Thread(target=run)
+        # thread.start()
 
-        def run():
-            while True:
-                if is_running:
-                    pil = frame_indexable[index]
-                    self.model.predict(pil)
-                else:
-                    time.sleep(500)
+        # def run():
+        #     while True:
+        #         if is_running:
+        #             pil = frame_indexable[index]
+        #             self.model.predict(pil)
+        #         else:
+        #             time.sleep(500)
 
-        def start():
-            nonlocal is_running
-            is_running = True
+        # def start():
+        #     nonlocal is_running
+        #     is_running = True
 
-        def stop():
-            nonlocal is_running
-            is_running = False
+        # def stop():
+        #     nonlocal is_running
+        #     is_running = False
 
         self.container = pn.Column()
 
-    def force_predict(self, path, index):
-        pil = indexable_file_loader(path)[index]
-        prediction = self.model.predict(pil)
-        self.predictions_state[(path, index)] = prediction
-        self.notify(path, index)
+    def subscribe(self, subscriber):
+        self.subscribers.append(subscriber)
 
-    def notify(self, path, index):
+    def force_predict(self, frame_identifier):
+        path, index = frame_identifier
+        frame_identifier, frame = indexable_file_loader(path)[index]
+        prediction = self.model.predict(frame)
+        self.predictions_state[frame_identifier] = prediction
+        self.notify(frame_identifier)
+
+    def get_prediction(self, frame_identifier):
+        if frame_identifier in self.predictions_state:
+            return self.predictions_state[frame_identifier]
+        return None
+
+    def notify(self, frame_identifier):
         for it in self.subscribers:
-            it.update(self.predictions_state, path, index)
+            it.update_prediction(self.predictions_state, frame_identifier)
 
     def render(self):
         return self.container
 
 
 class PredictionViewer:
-    def __init__(self) -> None:
+    def __init__(self, prediction_manager) -> None:
         self.current_frame_index = pn.widgets.IntSlider(
             name="Current Frame",
             value=0,
@@ -108,6 +118,9 @@ class PredictionViewer:
             end=100,
             width=800,
         )
+        self.prediction_manager = prediction_manager
+        self.current_frame_identifier = None
+        self.prediction_manager.subscribe(self)
 
         self.current_frame_container = pn.Column("")
         next_btn = pn.widgets.Button(name=">", button_type="primary")
@@ -120,6 +133,14 @@ class PredictionViewer:
         next_next_btn.on_click(lambda _: update_frame(frame_offset=5 * 30))
         prev_prev_btn.on_click(lambda _: update_frame(frame_offset=-5 * 30))
 
+        predict_btn = pn.widgets.Button(name="Predict", button_type="primary")
+        predict_btn.on_click(lambda _: predict_on_current())
+
+        def predict_on_current():
+            if self.current_frame_identifier is not None:
+                self.container.loading = True
+                self.prediction_manager.force_predict(self.current_frame_identifier)
+
         def update_frame(frame_offset):
             new_value = np.clip(
                 self.current_frame_index.value + frame_offset,
@@ -128,8 +149,9 @@ class PredictionViewer:
             )
             self.current_frame_index.value = new_value
 
-        self.curret_frame_index.param.watch(lambda _: self._show(), "value")
+        self.current_frame_index.param.watch(lambda _: self._show(), "value")
         self.container = pn.Column(
+            predict_btn,
             self.current_frame_container,
             pn.Column(
                 self.current_frame_index,
@@ -139,9 +161,28 @@ class PredictionViewer:
             styles=dict(background="#eeeeee", padding="25px 15px"),
         )
 
+    def draw_prediction(self, pil, pred):
+        print("drawing frame", pred)
+        im = np.array(pil)
+        for x0, y0, w, h in pred:
+            x1, y1 = x0 + w, y0 + h
+            x0, y0, x1, y1 = int(x0), int(y0), int(x1), int(y1)
+            im = cv2.rectangle(im, (x0, y0), (x1, y1), (255, 0, 0), 5)
+
+        return Image.fromarray(im)
+
     def _show(self):
         self.container.loading = True
-        frame = self.frames_indexable[self.current_frame_index.value]
+        self.current_frame_identifier, frame = self.frames_indexable[
+            self.current_frame_index.value
+        ]
+        prediction = self.prediction_manager.get_prediction(
+            self.current_frame_identifier
+        )
+
+        if prediction is not None:
+            frame = self.draw_prediction(frame, prediction)
+
         if frame is not None:
             frame.thumbnail((800, 800))
 
@@ -154,14 +195,18 @@ class PredictionViewer:
         self.current_frame_index.end = len(frame_indexable)
         self._show()
 
+    def update_prediction(self, all_predictions, frame_identifier):
+        self._show()
+
     def render(self):
         return self.container
 
 
 class App:
     def __init__(self):
+        prediction_manager = PredictionManager()
         video_indexable = VideoIndexable("/home/iz/workspace/DJI_0002.MP4")
-        self.current_mission = PredictionViewer()  ## TODO
+        self.current_mission = PredictionViewer(prediction_manager)
         self.current_mission.update_frame(video_indexable)
 
     def get_files_list_container(self):
