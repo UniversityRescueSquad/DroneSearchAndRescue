@@ -35,25 +35,6 @@ class IPSARDataset(Dataset):
     def __len__(self) -> int:
         return len(self.image_paths)
 
-    @staticmethod
-    def plt_show(item, size=10, im_opacity=0.5):
-        np_pil = np.array(item["pil"])
-
-        fig, ax = plt.subplots(dpi=100, figsize=(size, size))
-        plt.tight_layout()
-        ax.imshow(np_pil, alpha=im_opacity)
-
-        for x1, y1, x2, y2 in item["boxes"]:
-            w = x2 - x1
-            h = y2 - y1
-            ax.add_patch(
-                Rectangle((x1, y1), w, h, fill=None, edgecolor="red", linewidth=1)
-            )
-
-        plt.close()
-
-        return fig
-
     def get_dataloader(self, processor, bs, shuffle):
         return torch.utils.data.DataLoader(
             self,
@@ -114,9 +95,9 @@ class IPSARDataset(Dataset):
         return {"labels": labels, **processed_images}, info
 
     def _parse_annotation(self, annotation_path: str) -> dict:
+        boxes = []
         if os.path.exists(annotation_path):
             root = ElementTree.parse(annotation_path).getroot()
-            boxes = []
             for obj in root.findall("object"):
                 if obj.find("name").text == "human":
                     bbox = obj.find("bndbox")
@@ -124,9 +105,10 @@ class IPSARDataset(Dataset):
                     ymin = int(bbox.find("ymin").text)
                     xmax = int(bbox.find("xmax").text)
                     ymax = int(bbox.find("ymax").text)
-                    boxes.append([xmin, ymin, xmax, ymax])
-        else:
-            boxes = []
+                    boxes.append([xmin, ymin, xmax - xmin, ymax - ymin])
+
+        if len(boxes) == 0:
+            boxes = np.zeros((0, 4), dtype=float)
 
         return {
             "boxes": torch.tensor(boxes, dtype=torch.float32),
