@@ -14,7 +14,7 @@ The Drone Search and Rescue project addresses this concern by developing a syste
 - Navigate to the repo folder using a terminal and execute `pip install .`
 - Download the trained model from [here](https://drive.google.com/drive/folders/1xiE6QkffSoHG12gfbxd4spzGZjGtFl2_)
   - file name - `epoch=65-step=10494.ckpt`
-- Execute `python drone_sar/cli.py` to check if everything is installed properly
+- Execute `python drone_sar/cli.py -h` to check if everything is installed properly
 - Execute the following command to run on folder of images:
 
   ```bash
