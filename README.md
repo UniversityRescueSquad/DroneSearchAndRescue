@@ -6,15 +6,26 @@ The University Rescue Squad is a first responders rescue organization in Bulgari
 
 The Drone Search and Rescue project addresses this concern by developing a system for object detection within drone-captured video footage. The project specifically targets the identification of various objects like humans, backpacks, bicycles etc.
 
-# Installation
+# Instructions for installation and usage
 
-# Usage
+- Download the repo `git clone https://github.com/UniversityRescueSquad/DroneSearchAndRescue`.
+  - Or pull the latest version `git pull`.
+- [Download python](https://www.python.org/downloads/)
+- Navigate to the repo folder using a terminal and execute `pip install`.
+- Download the trained model from [here](https://drive.google.com/drive/folders/1xiE6QkffSoHG12gfbxd4spzGZjGtFl2_).
+  - file name - `epoch=65-step=10494.ckpt`
+- Execute `python drone_sar/cli.py` to check if everything is installed properly.
+- Execute the following command to run on folder of images:
 
-# Limitations
+  ```bash
+  python drone_sar/cli.py \
+    --model_path ./epoch=65-step=10494.ckpt \
+    --images_dir ./example_img_dir \
+    --export_dir ./results \
+    --device cpu
+  ```
 
-# Contributing
-
-If you have a feature request or bug report, leave an issue on the issues page or send a pull request.
+  Adjust the parameters according to the location of the model and the input and output dirs.
 
 # License
 
