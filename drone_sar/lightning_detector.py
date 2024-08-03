@@ -12,7 +12,7 @@ import lightning as L
 import torch
 
 
-def get_lightning_trainer(model_name, max_epochs):
+def get_lightning_trainer(model_name, max_epochs, device):
     # optim_metric = "metric_val_mean_F1"
     # optim_metric_mode = "max"
     optim_metric = "val_loss"
@@ -37,7 +37,7 @@ def get_lightning_trainer(model_name, max_epochs):
         callbacks=[early_stop, checkpoint_callback],
         profiler=profiler,
         gradient_clip_val=0.1,
-        accelerator="gpu",
+        accelerator=device,
     )
 
     return trainer
