@@ -8,6 +8,17 @@ The University Rescue Squad is a first responders rescue organization in Bulgari
 
 The Drone Search and Rescue project addresses this concern by developing a system for object detection within drone-captured video footage. The project specifically targets the identification of various objects like humans, backpacks, bicycles etc.
 
+## Desktop App
+
+```bash
+# ubuntu
+sudo apt-get install tk-dev
+
+# max
+brew install python-tk
+brew install tcl-tk
+```
+
 ## Instructions for installation and usage
 
 - Download the repo `git clone https://github.com/UniversityRescueSquad/DroneSearchAndRescue`

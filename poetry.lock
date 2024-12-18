@@ -122,6 +122,17 @@ files = [
 frozenlist = ">=1.1.0"
 
 [[package]]
+name = "altgraph"
+version = "0.17.4"
+description = "Python graph (network) package"
+optional = false
+python-versions = "*"
+files = [
+    {file = "altgraph-0.17.4-py2.py3-none-any.whl", hash = "sha256:642743b4750de17e655e6711601b077bc6598dbfa3ba5fa2b2a35ce12b508dff"},
+    {file = "altgraph-0.17.4.tar.gz", hash = "sha256:1b5afbb98f6c4dcadb2e2ae6ab9fa994bbb8c1d75f4fa96d340f9437ae454406"},
+]
+
+[[package]]
 name = "anyio"
 version = "4.2.0"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
@@ -1788,6 +1799,20 @@ doc = ["myst-parser", "sphinx", "sphinx-book-theme"]
 test = ["coverage", "pytest", "pytest-cov"]
 
 [[package]]
+name = "macholib"
+version = "1.16.3"
+description = "Mach-O header analysis and editing"
+optional = false
+python-versions = "*"
+files = [
+    {file = "macholib-1.16.3-py2.py3-none-any.whl", hash = "sha256:0e315d7583d38b8c77e815b1ecbdbf504a8258d8b3e17b61165c6feb60d18f2c"},
+    {file = "macholib-1.16.3.tar.gz", hash = "sha256:07ae9e15e8e4cd9a788013d81f5908b3609aa76f9b1421bae9c4d7606ec86a30"},
+]
+
+[package.dependencies]
+altgraph = ">=0.17"
+
+[[package]]
 name = "markdown"
 version = "3.5.2"
 description = "Python implementation of John Gruber's Markdown."
@@ -2544,6 +2569,17 @@ qa = ["flake8 (==3.8.3)", "mypy (==0.782)"]
 testing = ["docopt", "pytest (<6.0.0)"]
 
 [[package]]
+name = "pefile"
+version = "2023.2.7"
+description = "Python PE parsing module"
+optional = false
+python-versions = ">=3.6.0"
+files = [
+    {file = "pefile-2023.2.7-py3-none-any.whl", hash = "sha256:da185cd2af68c08a6cd4481f7325ed600a88f6a813bad9dea07ab3ef73d8d8d6"},
+    {file = "pefile-2023.2.7.tar.gz", hash = "sha256:82e6114004b3d6911c77c3953e3838654b04511b8b66e8583db70c65998017dc"},
+]
+
+[[package]]
 name = "pexpect"
 version = "4.9.0"
 description = "Pexpect allows easy control of interactive console applications."
@@ -2790,6 +2826,57 @@ plugins = ["importlib-metadata"]
 windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
+name = "pyinstaller"
+version = "6.11.1"
+description = "PyInstaller bundles a Python application and all its dependencies into a single package."
+optional = false
+python-versions = "<3.14,>=3.8"
+files = [
+    {file = "pyinstaller-6.11.1-py3-none-macosx_10_13_universal2.whl", hash = "sha256:44e36172de326af6d4e7663b12f71dbd34e2e3e02233e181e457394423daaf03"},
+    {file = "pyinstaller-6.11.1-py3-none-manylinux2014_aarch64.whl", hash = "sha256:6d12c45a29add78039066a53fb05967afaa09a672426072b13816fe7676abfc4"},
+    {file = "pyinstaller-6.11.1-py3-none-manylinux2014_i686.whl", hash = "sha256:ddc0fddd75f07f7e423da1f0822e389a42af011f9589e0269b87e0d89aa48c1f"},
+    {file = "pyinstaller-6.11.1-py3-none-manylinux2014_ppc64le.whl", hash = "sha256:0d6475559c4939f0735122989611d7f739ed3bf02f666ce31022928f7a7e4fda"},
+    {file = "pyinstaller-6.11.1-py3-none-manylinux2014_s390x.whl", hash = "sha256:e21c7806e34f40181e7606926a14579f848bfb1dc52cbca7eea66eccccbfe977"},
+    {file = "pyinstaller-6.11.1-py3-none-manylinux2014_x86_64.whl", hash = "sha256:32c742a24fe65d0702958fadf4040f76de85859c26bec0008766e5dbabc5b68f"},
+    {file = "pyinstaller-6.11.1-py3-none-musllinux_1_1_aarch64.whl", hash = "sha256:208c0ef6dab0837a0a273ea32d1a3619a208e3d1fe3fec3785eea71a77fd00ce"},
+    {file = "pyinstaller-6.11.1-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:ad84abf465bcda363c1d54eafa76745d77b6a8a713778348377dc98d12a452f7"},
+    {file = "pyinstaller-6.11.1-py3-none-win32.whl", hash = "sha256:2e8365276c5131c9bef98e358fbc305e4022db8bedc9df479629d6414021956a"},
+    {file = "pyinstaller-6.11.1-py3-none-win_amd64.whl", hash = "sha256:7ac83c0dc0e04357dab98c487e74ad2adb30e7eb186b58157a8faf46f1fa796f"},
+    {file = "pyinstaller-6.11.1-py3-none-win_arm64.whl", hash = "sha256:35e6b8077d240600bb309ed68bb0b1453fd2b7ab740b66d000db7abae6244423"},
+    {file = "pyinstaller-6.11.1.tar.gz", hash = "sha256:491dfb4d9d5d1d9650d9507daec1ff6829527a254d8e396badd60a0affcb72ef"},
+]
+
+[package.dependencies]
+altgraph = "*"
+importlib-metadata = {version = ">=4.6", markers = "python_version < \"3.10\""}
+macholib = {version = ">=1.8", markers = "sys_platform == \"darwin\""}
+packaging = ">=22.0"
+pefile = {version = ">=2022.5.30,<2024.8.26 || >2024.8.26", markers = "sys_platform == \"win32\""}
+pyinstaller-hooks-contrib = ">=2024.9"
+pywin32-ctypes = {version = ">=0.2.1", markers = "sys_platform == \"win32\""}
+setuptools = ">=42.0.0"
+
+[package.extras]
+completion = ["argcomplete"]
+hook-testing = ["execnet (>=1.5.0)", "psutil", "pytest (>=2.7.3)"]
+
+[[package]]
+name = "pyinstaller-hooks-contrib"
+version = "2024.10"
+description = "Community maintained hooks for PyInstaller"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "pyinstaller_hooks_contrib-2024.10-py3-none-any.whl", hash = "sha256:ad47db0e153683b4151e10d231cb91f2d93c85079e78d76d9e0f57ac6c8a5e10"},
+    {file = "pyinstaller_hooks_contrib-2024.10.tar.gz", hash = "sha256:8a46655e5c5b0186b5e527399118a9b342f10513eb1425c483fa4f6d02e8800c"},
+]
+
+[package.dependencies]
+importlib-metadata = {version = ">=4.6", markers = "python_version < \"3.10\""}
+packaging = ">=22.0"
+setuptools = ">=42.0.0"
+
+[[package]]
 name = "pyparsing"
 version = "3.1.1"
 description = "pyparsing module - Classes and methods to define and execute parsing grammars"
@@ -2802,6 +2889,73 @@ files = [
 
 [package.extras]
 diagrams = ["jinja2", "railroad-diagrams"]
+
+[[package]]
+name = "pyqt6"
+version = "6.8.0"
+description = "Python bindings for the Qt cross platform application toolkit"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "PyQt6-6.8.0-cp39-abi3-macosx_10_14_universal2.whl", hash = "sha256:8c5c05f5fdff31a5887dbc29b27615b09df467631238d7b449283809ffca6228"},
+    {file = "PyQt6-6.8.0-cp39-abi3-manylinux_2_35_x86_64.whl", hash = "sha256:452bae5840077bf0f146c798d7777f70d7bdd0c7dcfa9ee7a415c1daf2d10038"},
+    {file = "PyQt6-6.8.0-cp39-abi3-manylinux_2_39_aarch64.whl", hash = "sha256:cf7123caea14e7ecf10bd12cae48e8d9970ef7caf627bc7d7988b0baa209adb3"},
+    {file = "PyQt6-6.8.0-cp39-abi3-win_amd64.whl", hash = "sha256:a9913d479f1ffee804bf7f232079baea4fb4b221a8f4890117588917a54ea30d"},
+    {file = "PyQt6-6.8.0-cp39-abi3-win_arm64.whl", hash = "sha256:48bace7b87676bba5e6114482f3a20ca20be90c7f261b5d340464313f5f2bf5e"},
+    {file = "PyQt6-6.8.0.tar.gz", hash = "sha256:6d8628de4c2a050f0b74462e4c9cb97f839bf6ffabbca91711722ffb281570d9"},
+]
+
+[package.dependencies]
+PyQt6-Qt6 = ">=6.8.0,<6.9.0"
+PyQt6-sip = ">=13.8,<14"
+
+[[package]]
+name = "pyqt6-qt6"
+version = "6.8.1"
+description = "The subset of a Qt installation needed by PyQt6."
+optional = false
+python-versions = "*"
+files = [
+    {file = "PyQt6_Qt6-6.8.1-py3-none-macosx_10_14_x86_64.whl", hash = "sha256:1eb8460a1fdb38d0b2458c2974c01d471c1e59e4eb19ea63fc447aaba3ad530e"},
+    {file = "PyQt6_Qt6-6.8.1-py3-none-macosx_11_0_arm64.whl", hash = "sha256:9f3790c4ce4dc576e48b8718d55fb8743057e6cbd53a6ca1dd253ffbac9b7287"},
+    {file = "PyQt6_Qt6-6.8.1-py3-none-manylinux_2_35_x86_64.whl", hash = "sha256:08065d595f1e6fc2dde9f4450eeff89082f4bad26f600a8e9b9cc5966716bfcf"},
+    {file = "PyQt6_Qt6-6.8.1-py3-none-manylinux_2_39_aarch64.whl", hash = "sha256:20843cb86bd94942d1cd99e39bf1aeabb875b241a35a8ab273e4bbbfa63776db"},
+    {file = "PyQt6_Qt6-6.8.1-py3-none-win_amd64.whl", hash = "sha256:006d786693d0511fbcf184a862edbd339c6ed1bb3bd9de363d73a19ed4b23dff"},
+    {file = "PyQt6_Qt6-6.8.1-py3-none-win_arm64.whl", hash = "sha256:a8bc2ed4ee5e7c6ff4dd1c7db0b27705d151fee5dc232bbd1bf17618f937f515"},
+]
+
+[[package]]
+name = "pyqt6-sip"
+version = "13.9.1"
+description = "The sip module support for PyQt6"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "PyQt6_sip-13.9.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:e996d320744ca8342cad6f9454345330d4f06bce129812d032bda3bad6967c5c"},
+    {file = "PyQt6_sip-13.9.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2ab85aaf155828331399c59ebdd4d3b0358e42c08250e86b43d56d9873df148a"},
+    {file = "PyQt6_sip-13.9.1-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:22d66256b800f552ade51a463510bf905f3cb318aae00ff4288fae4de5d0e600"},
+    {file = "PyQt6_sip-13.9.1-cp310-cp310-win_amd64.whl", hash = "sha256:5643c92424fe62cb0b33378fef3d28c1525f91ada79e8a15bd9a05414a09503d"},
+    {file = "PyQt6_sip-13.9.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:57b5312ef13c1766bdf69b317041140b184eb24a51e1e23ce8fc5386ba8dffb2"},
+    {file = "PyQt6_sip-13.9.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5004514b08b045ad76425cf3618187091a668d972b017677b1b4b193379ef553"},
+    {file = "PyQt6_sip-13.9.1-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:accab6974b2758296400120fdcc9d1f37785b2ea2591f00656e1776f058ded6c"},
+    {file = "PyQt6_sip-13.9.1-cp311-cp311-win_amd64.whl", hash = "sha256:1ec52e962f54137a19208b6e95b6bd9f7a403eb25d7237768a99306cd9db26d1"},
+    {file = "PyQt6_sip-13.9.1-cp311-cp311-win_arm64.whl", hash = "sha256:6e6c1e2592187934f4e790c0c099d0033e986dcef7bdd3c06e3895ffa995e9fc"},
+    {file = "PyQt6_sip-13.9.1-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:1fb405615970e85b622b13b4cad140ff1e4182eb8334a0b27a4698e6217b89b0"},
+    {file = "PyQt6_sip-13.9.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c800db3464481e87b1d2b84523b075df1e8fc7856c6f9623dc243f89be1cb604"},
+    {file = "PyQt6_sip-13.9.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:c1942e107b0243ced9e510d507e0f27aeea9d6b13e0a1b7c06fd52a62e0d41f7"},
+    {file = "PyQt6_sip-13.9.1-cp312-cp312-win_amd64.whl", hash = "sha256:552ff8fdc41f5769d3eccc661f022ed496f55f6e0a214c20aaf56e56385d61b6"},
+    {file = "PyQt6_sip-13.9.1-cp312-cp312-win_arm64.whl", hash = "sha256:976c7758f668806d4df7a8853f390ac123d5d1f73591ed368bdb8963574ff589"},
+    {file = "PyQt6_sip-13.9.1-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:56ce0afb19cd8a8c63ff93ae506dffb74f844b88adaa6673ebc0dec43af48a76"},
+    {file = "PyQt6_sip-13.9.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5d7726556d1ca7a7ed78e19ba53285b64a2a8f6ad7ff4cb18a1832efca1a3102"},
+    {file = "PyQt6_sip-13.9.1-cp313-cp313-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:14f95c6352e3b85dc26bf59cfbf77a470ecbd5fcdcf00af4b648f0e1b9eefb9e"},
+    {file = "PyQt6_sip-13.9.1-cp313-cp313-win_amd64.whl", hash = "sha256:3c269052c770c09b61fce2f2f9ea934a67dfc65f443d59629b4ccc8f89751890"},
+    {file = "PyQt6_sip-13.9.1-cp313-cp313-win_arm64.whl", hash = "sha256:8b2ac36d6e04db6099614b9c1178a2f87788c7ffc3826571fb63d36ddb4c401d"},
+    {file = "PyQt6_sip-13.9.1-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:69a879cfc94f4984d180321b76f52923861cd5bf4969aa885eef7591ee932517"},
+    {file = "PyQt6_sip-13.9.1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:fa27b51ae4c7013b3700cf0ecf46907d1333ae396fc6511311920485cbce094b"},
+    {file = "PyQt6_sip-13.9.1-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:1d322ded1d1fea339cc6ac65b768e72c69c486eebb7db6ccde061b5786d74cc5"},
+    {file = "PyQt6_sip-13.9.1-cp39-cp39-win_amd64.whl", hash = "sha256:8c207528992d59b0801458aa6fcff118e5c099608ef0fc6ff8bccbdc23f29c04"},
+    {file = "pyqt6_sip-13.9.1.tar.gz", hash = "sha256:15be741d1ae8c82bb7afe9a61f3cf8c50457f7d61229a1c39c24cd6e8f4d86dc"},
+]
 
 [[package]]
 name = "python-dateutil"
@@ -2910,6 +3064,17 @@ files = [
     {file = "pywin32-306-cp38-cp38-win_amd64.whl", hash = "sha256:e8ac1ae3601bee6ca9f7cb4b5363bf1c0badb935ef243c4733ff9a393b1690c0"},
     {file = "pywin32-306-cp39-cp39-win32.whl", hash = "sha256:e25fd5b485b55ac9c057f67d94bc203f3f6595078d1fb3b458c9c28b7153a802"},
     {file = "pywin32-306-cp39-cp39-win_amd64.whl", hash = "sha256:39b61c15272833b5c329a2989999dcae836b1eed650252ab1b7bfbe1d59f30f4"},
+]
+
+[[package]]
+name = "pywin32-ctypes"
+version = "0.2.3"
+description = "A (partial) reimplementation of pywin32 using ctypes/cffi"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "pywin32-ctypes-0.2.3.tar.gz", hash = "sha256:d162dc04946d704503b2edc4d55f3dba5c1d539ead017afa00142c38b9885755"},
+    {file = "pywin32_ctypes-0.2.3-py3-none-any.whl", hash = "sha256:8a1513379d709975552d202d942d9837758905c8d01eb82b8bcc30918929e7b8"},
 ]
 
 [[package]]
@@ -4199,5 +4364,5 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.9"
-content-hash = "4f808b018e7135093664328e9723ae12b3aa676bb31806df2e5936eda7d1fbd5"
+python-versions = ">=3.9,<3.14"
+content-hash = "09ecaf86950cde1b3e82d96ac5181df4f76dc7c31602e51c40c3b3d58b58f6f8"

@@ -144,3 +144,4 @@ lightning_logs
 logs
 .checkpoints
 predict-perf_logs.txt
+.DS_Store
