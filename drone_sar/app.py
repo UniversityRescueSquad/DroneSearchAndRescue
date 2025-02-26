@@ -89,7 +89,9 @@ class PredictionManager:
     #     self.is_running = False
     #     self.on_finally()
 
-    def _run(self, model_path, input_file_path, output_dir, skip_frames, device):
+    def _run(
+        self, model_path, input_file_path, output_dir, skip_frames, tqdm_el, device
+    ):
         try:
             print("> Process start")
             now = datetime.now()
@@ -112,7 +114,7 @@ class PredictionManager:
             os.makedirs(predictions_dir, exist_ok=True)
 
             with torch.inference_mode():
-                for index in range(0, target_length, skip_frames):
+                for index in tqdm_el(range(0, target_length, skip_frames)):
                     indexing_result = target_indexable[index]
                     if indexing_result is not None:
                         _, frame_pil = indexing_result
@@ -167,9 +169,7 @@ class Elements:
     device_selector_el = pn.widgets.Select(
         options=["cpu", "cuda", "mps"], value="cpu", width=WIDTH
     )
-    prediction_progress_el = pn.indicators.Progress(
-        name="Prediction Progress", value=0, width=WIDTH
-    )
+    prediction_progress_el = pn.widgets.Tqdm(value=0, write_to_console=True)
     prediction_result_el = pn.Column()
     ongoing_prediction_container = pn.Column(
         "**Ongoing prediction**",
@@ -223,6 +223,7 @@ def handle_start_prediction(els: Elements, prediction_manager: PredictionManager
         input_file_path=input_file_path,
         output_dir=els.output_dir_el.value,
         skip_frames=els.skip_frames_el.value,
+        tqdm_el=els.prediction_progress_el,
         device=els.device_selector_el.value,
     )
 
@@ -246,7 +247,8 @@ def handle_prediction_error(e, els: Elements):
 
 
 def handle_prediction_update(percent, els):
-    els.prediction_progress_el.value = percent
+    # els.prediction_progress_el.value = percent
+    pass
 
 
 def handle_update_frames_info(els: Elements):
@@ -275,6 +277,8 @@ prediction_manager = PredictionManager()
 
 def render_app():
     els = Elements()
+    print(id(els.template_container))
+    print(els.template_container)
 
     els.input_dir_el.param.watch(lambda e: handle_reload_input_dir(els), "value")
     els.skip_frames_el.param.watch(lambda e: handle_update_frames_info(els), "value")
@@ -296,7 +300,7 @@ def render_app():
 
 
 pn.serve(
-    {"/": render_app},
+    {"/": render_app()},
     port=8887,
     show=False,
 )

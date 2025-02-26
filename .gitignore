@@ -148,3 +148,4 @@ predict-perf_logs.txt
 *.jpg
 *.pkl
 *.ckpt
+workdir
