@@ -18,7 +18,7 @@ class IPSARDataset(Dataset):
     def __getitem__(self, index: int) -> dict:
         image_path = self.image_paths[index]
         dir_path, file_name = os.path.split(image_path)
-        file_identifier, ext = file_name.split(".")
+        file_identifier, ext = os.path.splitext(file_name)
 
         annotation_path = os.path.join(self.labels_path, f"{file_identifier}.xml")
         annotation = self._parse_annotation(annotation_path)
