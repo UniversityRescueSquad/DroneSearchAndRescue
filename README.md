@@ -1,44 +1,82 @@
 # Drone Search and Rescue
 
-The Drone Search and Rescue project is a tool designed to enchance full-scale search and rescue operations through object detection within drone-generated video content.
+The Drone Search and Rescue project is a tool designed to enhance full-scale search and rescue operations through object detection within drone-generated video content.
 
 ## Description
 
 The University Rescue Squad is a first responders rescue organization in Bulgaria that conducts search and rescue (SaR) operations in all kinds of natural terrain. During such operations, often aerial reconnaissance is employed deploying unmanned aerial vehicles to survey areas where missing persons are believed to be located. However, the subsequent manual review of the captured video footage introduces the high possibility of human errors.
 
-The Drone Search and Rescue project addresses this concern by developing a system for object detection within drone-captured video footage. The project specifically targets the identification of various objects like humans, backpacks, bicycles etc.
+The Drone Search and Rescue project addresses this concern by developing a system for object detection within drone-captured video footage. The model is a DETR (ResNet-50) fine-tuned for human detection on a combination of the HERIDAL and SARD datasets.
 
-## Desktop App
+## Installation
+
+- Clone the repo: `git clone https://github.com/UniversityRescueSquad/DroneSearchAndRescue`
+- [Install Python](https://www.python.org/downloads/) (3.9 or newer)
+- Create a virtual environment and install the project:
+
+  ```bash
+  python -m venv .venv
+  .venv/Scripts/activate      # on Linux/macOS: source .venv/bin/activate
+  pip install -e .
+  ```
+
+The desktop app additionally needs tkinter:
 
 ```bash
 # ubuntu
 sudo apt-get install tk-dev
 
-# max
-brew install python-tk
-brew install tcl-tk
+# macos
+brew install python-tk tcl-tk
 ```
 
-## Instructions for installation and usage
+## Dataset preparation
 
-- Download the repo `git clone https://github.com/UniversityRescueSquad/DroneSearchAndRescue`
-  - Or pull the latest version `git pull`
-- [Download python](https://www.python.org/downloads/)
-- Navigate to the repo folder using a terminal and execute `pip install .`
-- Download the trained model from [here](https://drive.google.com/drive/folders/1xiE6QkffSoHG12gfbxd4spzGZjGtFl2_)
-  - file name - `epoch=65-step=10494.ckpt`
-- Execute `python drone_sar/cli.py -h` to check if everything is installed properly
-- Execute the following command to run on folder of images:
+Training uses a unified dataset built from two public datasets:
 
-  ```bash
-  python drone_sar/cli.py \
-    --model_path ./epoch=65-step=10494.ckpt \
-    --images_dir ./example_img_dir \
-    --export_dir ./results \
-    --device cpu
-  ```
+- [HERIDAL](http://ipsar.fesb.unist.hr/HERIDAL%20database.html) - high resolution aerial photos: `wget http://ipsar.fesb.unist.hr/ipsar_data/heridal.zip`
+- [SARD](https://universe.roboflow.com/datasets-pdabr/sard-8xjhy) - video frames, exported from Roboflow in COCO format
 
-  Adjust the parameters according to the location of the model and the input and output dirs
+Extract them to `data/heridal` and `data/sard`, then:
+
+1. Run `notebooks/dataset_demo_and_harmonization.ipynb`. It analyzes both datasets and writes a merged copy to `data/unified_dataset` (single "human" class, Pascal VOC XML labels).
+2. Split it into train/val/test:
+
+   ```bash
+   python drone_sar/split_unified_dataset.py
+   ```
+
+   This restores the original per-source splits from the filenames and carves a validation set out of the HERIDAL training images.
+
+## Training
+
+```bash
+python drone_sar/train.py --device cuda
+```
+
+Useful options: `--epochs`, `--batch-size`, `--lr`, `--data-root`. Progress is logged to TensorBoard under `logs/` and the best checkpoints (by validation mAP@50) are kept in `.checkpoints/`.
+
+To verify the setup without a GPU, run a quick pipeline check on two small batches:
+
+```bash
+python drone_sar/train.py --device cpu --batch-size 2 --smoke
+```
+
+A GPU is strongly recommended for a real run; a free Colab/Kaggle T4 is enough for this dataset size.
+
+## Running detection on images
+
+```bash
+python drone_sar/cli.py \
+  --model_path .checkpoints/<your-checkpoint>.ckpt \
+  --images_dir ./example_img_dir \
+  --export_dir ./results \
+  --device cpu
+```
+
+This draws the detected boxes on each image and saves the results, along with a `precomputed_results.pkl` file with the raw outputs.
+
+Note: checkpoints trained before the box format fix (including the previously shared `epoch=65-step=10494.ckpt`) are not compatible with the current code and need to be retrained.
 
 ## License
 
@@ -51,4 +89,3 @@ Refer to the [LICENSE](LICENSE) for detailed information.
 ## Acknowledgement
 
 Dunja Božić-Štulić, Željko Marušić, Sven Gotovac: Deep Learning Approach on Aerial Imagery in Supporting Land Search and Rescue Missions, International Journal of Computer Vision, 2019.
-
