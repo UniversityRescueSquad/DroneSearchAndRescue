@@ -17,9 +17,9 @@ parser.add_argument("--device", default="cpu", choices=["cpu", "cuda"])
 args = parser.parse_args()
 results = []
 
-model = LightningDetector.load_from_checkpoint(
-    args.model_path, lr=0.01, ignore_mismatched_sizes=True
-).to(args.device)
+model = LightningDetector.load_from_checkpoint(args.model_path, lr=0.01).to(
+    args.device
+)
 
 os.makedirs(args.export_dir, exist_ok=True)
 with torch.inference_mode():

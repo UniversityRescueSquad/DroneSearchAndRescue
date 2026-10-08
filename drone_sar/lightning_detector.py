@@ -1,43 +1,29 @@
-import numpy as np
-from transformers import DetrImageProcessor, DetrForObjectDetection
-import lightning as L
-from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
-
-from lightning.pytorch.loggers import TensorBoardLogger
-from lightning.pytorch.callbacks.early_stopping import EarlyStopping
-from lightning.pytorch.callbacks import ModelCheckpoint
-from lightning.pytorch.profilers import AdvancedProfiler
-from lightning.pytorch.callbacks import DeviceStatsMonitor
-import lightning as L
 import torch
+import lightning as L
+from lightning.pytorch.loggers import TensorBoardLogger
+from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
+from torchmetrics.detection import MeanAveragePrecision
+from transformers import DetrImageProcessor, DetrForObjectDetection
 
 
-def get_lightning_trainer(model_name, max_epochs, device):
-    # optim_metric = "metric_val_mean_F1"
-    # optim_metric_mode = "max"
-    optim_metric = "val_loss"
-    optim_metric_mode = "min"
-
+def get_lightning_trainer(model_name, max_epochs, device, **trainer_kwargs):
     logger = TensorBoardLogger("logs/", name=model_name)
-    early_stop = EarlyStopping(
-        monitor=optim_metric, mode=optim_metric_mode, patience=50
-    )
+    early_stop = EarlyStopping(monitor="val_loss", mode="min", patience=10)
     checkpoint_callback = ModelCheckpoint(
         dirpath=".checkpoints/",
-        save_top_k=5,
-        monitor=optim_metric,
-        mode=optim_metric_mode,
+        filename=model_name + "-{epoch}-{val_map_50:.3f}",
+        save_top_k=3,
+        monitor="val_map_50",
+        mode="max",
     )
-    profiler = AdvancedProfiler(dirpath=".", filename="perf_logs")
-    # device_monitor = DeviceStatsMonitor(cpu_stats=False)
 
     trainer = L.Trainer(
         max_epochs=max_epochs,
         logger=logger,
         callbacks=[early_stop, checkpoint_callback],
-        profiler=profiler,
         gradient_clip_val=0.1,
         accelerator=device,
+        **trainer_kwargs,
     )
 
     return trainer
@@ -46,6 +32,7 @@ def get_lightning_trainer(model_name, max_epochs, device):
 class LightningDetector(L.LightningModule):
     def __init__(self, lr):
         super().__init__()
+        self.save_hyperparameters()
         self.processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
         self.model = DetrForObjectDetection.from_pretrained(
             "facebook/detr-resnet-50",
@@ -53,49 +40,75 @@ class LightningDetector(L.LightningModule):
             ignore_mismatched_sizes=True,
         )
         self.lr = lr
+        self.val_map = MeanAveragePrecision(box_format="xyxy", iou_type="bbox")
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        return optimizer
+        return torch.optim.Adam(self.parameters(), lr=self.lr)
 
     def forward(self, input):
         batch, info = input
-        output = self.model(**batch)
-        return output
-
-    def optim_step(self, input, flavour):
-        batch, info = input
-        output = self.model(**batch)
-        self.log(f"{flavour}_loss", output["loss"])
-        for lk, lv in output["loss_dict"].items():
-            self.log(f"{flavour}_{lk}", lv)
-        return output["loss"]
+        return self.model(**batch)
 
     def training_step(self, input, batch_index):
-        loss = self.optim_step(input, flavour="train")
-        return loss
+        batch, info = input
+        output = self.model(**batch)
+        bs = len(batch["labels"])
+        self.log("train_loss", output["loss"], batch_size=bs)
+        for lk, lv in output["loss_dict"].items():
+            self.log(f"train_{lk}", lv, batch_size=bs)
+        return output["loss"]
 
     def validation_step(self, input, batch_index):
-        loss = self.optim_step(input, flavour="val")
-        return loss
+        batch, info = input
+        output = self.model(**batch)
+        bs = len(batch["labels"])
+        self.log("val_loss", output["loss"], batch_size=bs)
+        for lk, lv in output["loss_dict"].items():
+            self.log(f"val_{lk}", lv, batch_size=bs)
 
-    def predict(self, pil):
+        sizes_hw = [(h, w) for w, h in info["target_sizes"]]
+        preds = self.processor.post_process_object_detection(
+            output, threshold=0.05, target_sizes=sizes_hw
+        )
+        targets = []
+        for label, (h, w) in zip(batch["labels"], sizes_hw):
+            boxes = label["boxes"]
+            if len(boxes):
+                scale = boxes.new_tensor([w, h, w, h])
+                cx, cy, bw, bh = (boxes * scale).unbind(-1)
+                xyxy = torch.stack(
+                    [cx - bw / 2, cy - bh / 2, cx + bw / 2, cy + bh / 2], dim=-1
+                )
+            else:
+                xyxy = boxes.reshape(0, 4)
+            targets.append({"boxes": xyxy, "labels": label["class_labels"]})
+        self.val_map.update(preds, targets)
+        return output["loss"]
+
+    def on_validation_epoch_end(self):
+        metrics = self.val_map.compute()
+        self.log("val_map", metrics["map"])
+        self.log("val_map_50", metrics["map_50"])
+        self.val_map.reset()
+
+    def predict(self, pil, threshold=0.5):
         dos = {
             "do_resize": True,
             "do_rescale": True,
             "do_normalize": True,
             "do_pad": False,
         }
-        device = self.device
         prep_input = self.processor(images=pil, return_tensors="pt", **dos)
-        prep_input = {k: v.to(device) for k, v in prep_input.items()}
-        raw_out = self.model.forward(**prep_input)
+        prep_input = {k: v.to(self.device) for k, v in prep_input.items()}
+        with torch.inference_mode():
+            raw_out = self.model(**prep_input)
 
         W, H = pil.size
-        logits = raw_out["logits"][0]
-        boxes = raw_out["pred_boxes"][0]
-        threshold_mask = torch.argmax(-logits, axis=-1).to(bool)
-        valid_boxes = boxes[threshold_mask, :]
-        valid_boxes = valid_boxes.detach().cpu().numpy()
-        valid_boxes = valid_boxes * np.array([[W, H, W, H]])
-        return valid_boxes
+        result = self.processor.post_process_object_detection(
+            raw_out, threshold=threshold, target_sizes=[(H, W)]
+        )[0]
+        boxes = result["boxes"].cpu().numpy()
+        # xyxy to [xmin, ymin, w, h] as expected by vis.draw_prediction
+        boxes[:, 2] -= boxes[:, 0]
+        boxes[:, 3] -= boxes[:, 1]
+        return boxes
