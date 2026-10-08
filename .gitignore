@@ -138,6 +138,7 @@ model/
 output.avi
 
 drone_sar/data
+data/
 heridal*
 
 lightning_logs
