@@ -45,7 +45,7 @@ class IPSARDataset(Dataset):
 
     @staticmethod
     def collate_fn(items, processor):
-        @joblib.Memory("~/.cache", verbose=0).cache
+        @joblib.Memory(os.path.expanduser("~/.cache/drone_sar"), verbose=0).cache
         def preprocess_cached(im_path):
             dos = {
                 "do_resize": True,
@@ -77,9 +77,11 @@ class IPSARDataset(Dataset):
         def format_annotation(boxes, W, H):
             if len(boxes) == 0:
                 return boxes
+            # convert pixel [xmin, ymin, w, h] to normalized [cx, cy, w, h],
+            # the format DetrForObjectDetection expects for training labels
             boxes = boxes.clone()
-            boxes[:, 0] /= W
-            boxes[:, 1] /= H
+            boxes[:, 0] = (boxes[:, 0] + boxes[:, 2] / 2) / W
+            boxes[:, 1] = (boxes[:, 1] + boxes[:, 3] / 2) / H
             boxes[:, 2] /= W
             boxes[:, 3] /= H
             return boxes
